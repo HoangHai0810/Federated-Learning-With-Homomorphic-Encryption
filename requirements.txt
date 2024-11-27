@@ -1,0 +1,11 @@
+torch
+flwr
+phe
+scikit-learn
+pandas
+numpy
+androguard==3.4.0a1
+datasets
+flwr_datasets
+flwr[simulation]>=1.0, <2.0
+hydra-core==1.3.2

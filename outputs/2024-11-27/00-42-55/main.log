@@ -1,0 +1,86 @@
+[2024-11-27 00:42:55,817][flwr][INFO] - Starting Flower simulation, config: num_rounds=10, no round_timeout
+[2024-11-27 00:43:02,566][flwr][INFO] - Flower VCE: Ray initialized with resources: {'GPU': 1.0, 'node:__internal_head__': 1.0, 'node:127.0.0.1': 1.0, 'object_store_memory': 1814507520.0, 'memory': 3629015040.0, 'accelerator_type:G': 1.0, 'CPU': 8.0}
+[2024-11-27 00:43:02,567][flwr][INFO] - Optimize your simulation with Flower VCE: https://flower.ai/docs/framework/how-to-run-simulations.html
+[2024-11-27 00:43:02,567][flwr][INFO] - Flower VCE: Resources for each Virtual Client: {'num_cpus': 2, 'num_gpus': 0.0}
+[2024-11-27 00:43:02,585][flwr][INFO] - Flower VCE: Creating VirtualClientEngineActorPool with 4 actors
+[2024-11-27 00:43:02,586][flwr][INFO] - [INIT]
+[2024-11-27 00:43:02,586][flwr][INFO] - Requesting initial parameters from one random client
+[2024-11-27 00:43:14,479][flwr][INFO] - Received initial parameters from one random client
+[2024-11-27 00:43:14,480][flwr][INFO] - Evaluating initial global parameters
+[2024-11-27 00:43:14,480][flwr][INFO] - 
+[2024-11-27 00:43:14,480][flwr][INFO] - [ROUND 1]
+[2024-11-27 00:43:14,481][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:44:01,085][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:44:01,107][flwr][WARNING] - No fit_metrics_aggregation_fn provided
+[2024-11-27 00:44:01,109][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:44:39,427][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:44:39,428][flwr][WARNING] - No evaluate_metrics_aggregation_fn provided
+[2024-11-27 00:44:39,428][flwr][INFO] - 
+[2024-11-27 00:44:39,429][flwr][INFO] - [ROUND 2]
+[2024-11-27 00:44:39,429][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:45:17,357][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:45:17,367][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:45:52,099][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:45:52,101][flwr][INFO] - 
+[2024-11-27 00:45:52,101][flwr][INFO] - [ROUND 3]
+[2024-11-27 00:45:52,102][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:46:31,380][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:46:31,390][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:47:14,877][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:47:14,877][flwr][INFO] - 
+[2024-11-27 00:47:14,878][flwr][INFO] - [ROUND 4]
+[2024-11-27 00:47:14,878][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:47:55,223][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:47:55,235][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:48:34,308][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:48:34,310][flwr][INFO] - 
+[2024-11-27 00:48:34,310][flwr][INFO] - [ROUND 5]
+[2024-11-27 00:48:34,311][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:49:10,865][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:49:10,875][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:49:48,164][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:49:48,165][flwr][INFO] - 
+[2024-11-27 00:49:48,166][flwr][INFO] - [ROUND 6]
+[2024-11-27 00:49:48,166][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:50:29,669][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:50:29,683][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:51:07,865][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:51:07,866][flwr][INFO] - 
+[2024-11-27 00:51:07,867][flwr][INFO] - [ROUND 7]
+[2024-11-27 00:51:07,867][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:51:46,960][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:51:46,977][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:52:31,321][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:52:31,321][flwr][INFO] - 
+[2024-11-27 00:52:31,322][flwr][INFO] - [ROUND 8]
+[2024-11-27 00:52:31,322][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:53:12,864][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:53:12,875][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:53:49,007][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:53:49,007][flwr][INFO] - 
+[2024-11-27 00:53:49,008][flwr][INFO] - [ROUND 9]
+[2024-11-27 00:53:49,008][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:54:33,158][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:54:33,167][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:55:12,781][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:55:12,782][flwr][INFO] - 
+[2024-11-27 00:55:12,783][flwr][INFO] - [ROUND 10]
+[2024-11-27 00:55:12,783][flwr][INFO] - configure_fit: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:55:56,005][flwr][INFO] - aggregate_fit: received 10 results and 0 failures
+[2024-11-27 00:55:56,016][flwr][INFO] - configure_evaluate: strategy sampled 10 clients (out of 10)
+[2024-11-27 00:56:31,214][flwr][INFO] - aggregate_evaluate: received 10 results and 0 failures
+[2024-11-27 00:56:31,214][flwr][INFO] - 
+[2024-11-27 00:56:31,215][flwr][INFO] - [SUMMARY]
+[2024-11-27 00:56:31,215][flwr][INFO] - Run finished 10 round(s) in 796.73s
+[2024-11-27 00:56:31,216][flwr][INFO] - 	History (loss, distributed):
+[2024-11-27 00:56:31,216][flwr][INFO] - 		round 1: 0.6010917842388153
+[2024-11-27 00:56:31,216][flwr][INFO] - 		round 2: 0.561157476902008
+[2024-11-27 00:56:31,217][flwr][INFO] - 		round 3: 0.5327965915203094
+[2024-11-27 00:56:31,217][flwr][INFO] - 		round 4: 0.5125546842813492
+[2024-11-27 00:56:31,217][flwr][INFO] - 		round 5: 0.49788968861103056
+[2024-11-27 00:56:31,217][flwr][INFO] - 		round 6: 0.48703705668449404
+[2024-11-27 00:56:31,218][flwr][INFO] - 		round 7: 0.47854473888874055
+[2024-11-27 00:56:31,219][flwr][INFO] - 		round 8: 0.47200755774974823
+[2024-11-27 00:56:31,219][flwr][INFO] - 		round 9: 0.4666038006544113
+[2024-11-27 00:56:31,220][flwr][INFO] - 		round 10: 0.4624488800764084
+[2024-11-27 00:56:31,220][flwr][INFO] - 

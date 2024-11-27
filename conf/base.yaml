@@ -1,0 +1,15 @@
+---
+
+num_rounds: 10
+num_clients: 10
+batch_size: 20
+num_classes: 2
+num_clients_per_round_fit: 3
+num_clients_per_round_eval: 5
+config_fit:
+  lr: 0.01
+  momentum: 0.9
+  local_epochs: 1
+
+defaults:
+  - model: net
