@@ -1,63 +1,68 @@
-import torch.nn as nn
-import torch
-import flwr as fl
-import torch.optim as optim
-import time
+from collections import OrderedDict
+from typing import List
 
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+
+import flwr
+from flwr.client import Client, ClientApp, NumPyClient
+from flwr.common import Context
+from flwr.server import ServerApp, ServerConfig, ServerAppComponents
+from flwr.simulation import run_simulation
+from flwr_datasets import FederatedDataset
+DEVICE = torch.device("cpu")
 
 class Net(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(input_size, 128) 
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(128, num_classes)
-        self.softmax = nn.Softmax(dim=1)
+        self.input_size = input_size
+        self.num_classes = num_classes
+
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=16, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1)
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.fc1 = nn.Linear(32 * (self.input_size // 4), 128)
+        self.fc2 = nn.Linear(128, self.num_classes)
 
     def forward(self, x):
+        x = x.unsqueeze(1) 
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.pool(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.pool(x)
+        x = x.view(x.size(0), -1) 
         x = self.fc1(x)
-        x = self.relu(x)
+        x = F.relu(x)
         x = self.fc2(x)
-        return self.softmax(x)
+        return x
 
+def get_parameters(net) -> List[np.ndarray]:
+    return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
-def train(net, trainloader, optimizer, epochs, device: str):
+def set_parameters(net, parameters: List[np.ndarray]):
+    params_dict = zip(net.state_dict().keys(), parameters)
+    state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
+    net.load_state_dict(state_dict, strict=True)
+
+def test(net, testloader):
+    """Evaluate the network on the entire test set."""
     criterion = torch.nn.CrossEntropyLoss()
-    net.train()
-    net.to(device)
-
-    for _ in range(epochs):
-        for features, labels in trainloader:
-            features, labels = features.to(device), labels.to(device)
-            optimizer.zero_grad() 
-            output = net(features)
-            loss = criterion(output, labels)
-            loss.backward()
-            optimizer.step()
-
-
-def test(net, testloader, device: str):
-    criterion = torch.nn.CrossEntropyLoss()
-    correct, loss = 0, 0.0
+    correct, total, loss = 0, 0, 0.0
     net.eval()
-    net.to(device)
-    
-    with torch.no_grad():  
+    with torch.no_grad():
         for features, labels in testloader:
-            features, labels = features.to(device), labels.to(device)
-            outputs = net(features) 
-            loss += criterion(outputs, labels).item()
+            features, labels = features.to(DEVICE), labels.to(DEVICE)
+            outputs = net(features)
+            loss += criterion(outputs, labels).item() * features.size(0)
             _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
             correct += (predicted == labels).sum().item()
-
-    accuracy = correct / len(testloader.dataset) 
+    loss /= total
+    accuracy = correct / total
     return loss, accuracy
-
-def model_to_parameters(model):
-    ndarrays = [val.cpu().numpy() for _, val in model.state_dict().items()]
-    return ndarrays
-
-
-def parameters_to_model(model, parameters):
-    state_dict = {k: torch.tensor(v) for k, v in zip(model.state_dict().keys(), parameters)}
-    model.load_state_dict(state_dict)
-    return model

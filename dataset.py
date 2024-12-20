@@ -21,22 +21,21 @@ class CustomDataset(Dataset):
         y = torch.tensor(self.labels[idx], dtype=torch.long)
         return x, y
 
-
 def explode_columns(df, columns):
     for col in columns:
         df[col] = df[col].apply(lambda x: ast.literal_eval(x))
+        expanded_columns = pd.DataFrame(
+            df[col].tolist(), 
+            index=df.index
+        ).fillna(0).astype(int)
+        expanded_columns.columns = [f"{col}_{i}" for i in range(expanded_columns.shape[1])]
 
-        max_len = df[col].apply(len).max()
-
-        for i in range(max_len):
-            df[f"{col}_{i}"] = df[col].apply(lambda x: x[i] if i < len(x) else 0) 
-
+        df = pd.concat([df, expanded_columns], axis=1)
         df = df.drop(columns=[col])
-
     return df
 
 def prepare_dataset(num_partitions, batch_size, val_ratio=0.1):
-    df = pd.read_csv('./data/Adware_processed.csv')
+    df = pd.read_csv('./data/processed_data.csv')
 
     df = df.drop(columns=['APK Filename', 'index'])
     df = explode_columns(df, ['Permissions', 'Activities', 'Services', 'Receivers'])
