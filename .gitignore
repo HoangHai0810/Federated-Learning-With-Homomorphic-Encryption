@@ -3,3 +3,9 @@
 /__pycache__
 /outputs
 /context.tenseal
+/recorvered_input_ckks
+/recorvered_input_paillier
+/recorvered_input_plain
+/history_plain.json
+/match.csv
+/results.pkl

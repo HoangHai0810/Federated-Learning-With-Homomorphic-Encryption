@@ -25,7 +25,6 @@ from flwr.common import (
 )
 from typing import List
 from pathlib import Path
-from dataset import prepare_dataset
 from model import Net, get_parameters, set_parameters
 from SegCKKS import *
 
@@ -34,14 +33,14 @@ class Args:
         self.device = 'cpu'
         self.lr = 0.01
         self.momentum = 0.9
-        self.local_ep = 2
+        self.local_ep = 10
         self.mode = 'Plain'
         self.input_size = 405
         self.num_classes = 5
-        self.ckks_sec_level = 192
-        self.ckks_mul_depth = 4
+        self.ckks_sec_level = 256
+        self.ckks_mul_depth = 1
         self.ckks_key_len = 8192
-        self.phe_key_len = 512
+        self.phe_key_len = 256
 
 class FlowerClient(Client):
     def __init__(self, args, partition_id, trainloaders, valloaders, w=None, FHE=None, PhePk=None, PheSk=None):
@@ -87,7 +86,7 @@ class FlowerClient(Client):
             status=status,
             parameters=parameters_updated,
             num_examples=len(self.ldr_train.dataset),
-            metrics={},
+            metrics={"partition_id": self.partition_id},
         )
 
     def train(self):
@@ -226,7 +225,7 @@ class FlowerClient(Client):
             status=status,
             loss=loss,
             num_examples=total,
-            metrics={"accuracy": accuracy, "partition_id": self.partition_id},
+            metrics={"accuracy": accuracy}
         )
 
 def client_fn(context: fl.common.Context, trainloaders, valloaders) -> Client:

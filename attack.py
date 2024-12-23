@@ -46,10 +46,8 @@ class FedAttack(FedCustom):
         self.client_data_map[client_id].append(recovered_data)
         print(f"Recovered data from client {client_id}: {recovered_data}")
 
-        # Lưu dữ liệu đã hồi phục
         self.recovered_data.append(recovered_data)
 
-        # Gửi lại tham số gốc để server tiếp tục xử lý
         return FitRes(
             status=Status(code=Code.OK, message="Success"),
             parameters=parameters_original,
@@ -65,30 +63,35 @@ class FedAttack(FedCustom):
         state_dict = {f"layer_{i}": torch.tensor(value) for i, value in ndarrays.items()}
         model.load_state_dict(state_dict, strict=False)
 
-        input_data = torch.randn(1, 405, requires_grad=True)
-        target = torch.randn(1, 5)
+        num_samples = 32
+        recovered_data_list = []
 
-        loss_fn = nn.MSELoss()
-        optimizer = optim.Adam([input_data], lr=0.1)
+        for sample_idx in range(num_samples):
+            input_data = torch.randint(0, 10, (1, 405), dtype=torch.float32, requires_grad=True)
+            target = torch.randint(0, 5, (1,), dtype=torch.long)
 
-        for epoch in range(10000):
-            optimizer.zero_grad()
-            output = model(input_data)
-            loss = loss_fn(output, target)
+            loss_fn = nn.CrossEntropyLoss()
+            optimizer = optim.Adam([input_data], lr=0.001)
 
-            loss.backward()
-            optimizer.step()
+            for epoch in range(1000):
+                optimizer.zero_grad()
+                output = model(input_data)
+                loss = loss_fn(output, target)
 
-            if epoch % 1000 == 0:
-                print(f"Epoch {epoch}, Loss: {loss.item()}")
+                loss.backward()
+                optimizer.step()
 
-        recovered_data = input_data.detach().numpy()
-        
-        save_path = f"recovered_input_client_{client_id}.pkl"
+            recovered_data = input_data.detach().numpy().astype(int)
+            recovered_data_list.append(recovered_data)
+            print(f"Recovered data for sample {sample_idx} from client {client_id}")
+
+        save_path = f"recorvered_input_plain/recovered_input_client_plain_{client_id}.pkl"
         with open(save_path, "wb") as f:
-            pickle.dump(recovered_data, f)
+            pickle.dump(recovered_data_list, f)
         print(f"Recovered Input Data for client {client_id} saved to {save_path}")
-        return recovered_data
+
+        return np.vstack(recovered_data_list)
+
 
     def build_model(self):
         """Xây dựng mô hình với 405 đặc trưng đầu vào và 5 nhãn đầu ra"""
@@ -117,6 +120,6 @@ def ndarrays_to_parameters(ndarrays: dict) -> Parameters:
 
 def attack_fn(context: Context):
     strategy = FedAttack()
-    config = ServerConfig(num_rounds=10)
+    config = ServerConfig(num_rounds=1)
     return ServerAppComponents(config = config,strategy=strategy)
 

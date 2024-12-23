@@ -45,15 +45,12 @@ class Blockchain:
         block_string = json.dumps({
             "index": index,
             "previous_hash": previous_hash,
-            "data": str(data),  # Chuyển data thành string để băm được
+            "data": str(data), 
             "timestamp": timestamp
         }, sort_keys=True)
         return hashlib.sha256(block_string.encode('utf-8')).hexdigest()
 
     def get_latest_block(self) -> Block:
-        """
-        Lấy block mới nhất trong chuỗi.
-        """
         return self.chain[-1]
 
     def print_blockchain(self):
