@@ -24,6 +24,8 @@ from blockchain import Blockchain  # Import blockchain class
 import numpy as np
 from model import Net
 import pickle
+from dashboard_api import training_status
+import time
 
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
@@ -66,14 +68,21 @@ class FedCustom(FedAvg):
         self.history = {"round": [], "loss": [], "accuracy": []}
 
     def aggregate_fit(self, rnd: int, results: List[Tuple], failures: List[BaseException]):
+        start_agg = time.time()
         aggregated_result = super().aggregate_fit(rnd, results, failures)
-        
         if aggregated_result is not None:
             aggregated_weights, _ = aggregated_result
             aggregated_ndarrays = parameters_to_ndarrays(aggregated_weights)
 
             self.blockchain.add_block(rnd, aggregated_ndarrays)
             print(f"Round {rnd}: Aggregated weights added to blockchain.")
+        agg_time = time.time() - start_agg
+        
+        enc_times = [res.metrics.get("encryption_time", 0) for _, res in results if res.metrics.get("encryption_time") is not None]
+        avg_enc_time = np.mean(enc_times) if enc_times else 0.0
+        
+        training_status["aggregation_time"] = agg_time
+        training_status["avg_encryption_time"] = avg_enc_time
 
         return aggregated_result
 
@@ -82,9 +91,19 @@ class FedCustom(FedAvg):
     ) -> Tuple[Optional[float], Dict[str, Scalar]]:
         loss_aggregated = np.mean([res.loss for _, res in results])
         accuracy_aggregated = np.mean([res.metrics["accuracy"] for _, res in results])
-
+        dec_times = [res.metrics.get("decryption_time", 0) for _, res in results if res.metrics.get("decryption_time") is not None]
+        avg_dec_time = np.mean(dec_times) if dec_times else 0.0
         print(f"Round {rnd}: Aggregated Loss: {loss_aggregated:.4f}, Accuracy: {accuracy_aggregated:.4f}")
+        
+        training_status["round"] = rnd
+        training_status['avg_decryption_time'] = avg_dec_time
+        training_status["loss"] = loss_aggregated
+        training_status["accuracy"] = accuracy_aggregated
+        training_status["log"].append(
+            f"Round {rnd}: loss={loss_aggregated:.4f}, accuracy={(accuracy_aggregated*100):.2f}%"
+        )
 
+        print('Done evaluate')
         self.history["round"].append(rnd)
         self.history["loss"].append(loss_aggregated)
         self.history["accuracy"].append(accuracy_aggregated)

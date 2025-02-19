@@ -6,13 +6,17 @@ import flwr as fl
 import hydra
 import torch
 from hydra.core.hydra_config import HydraConfig
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.utils import to_categorical
+import numpy as np
+import torch
+from torch.utils.data import DataLoader, TensorDataset
 from omegaconf import DictConfig, OmegaConf
-from client import client_fn
+from client_mnist import client_fn
 from server import server_fn
 from flwr.client import ClientApp
 from flwr.server import ServerApp
 import pandas as pd
-from dataset import prepare_dataset
 from attack import attack_fn
 import logging
 
@@ -24,6 +28,32 @@ logging.basicConfig(
 
 logging.getLogger("flwr").propagate = False
 from SegCKKS import *
+
+def prepare_dataset(num_partitions, batch_size):
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    x_train = x_train.reshape(-1, 28, 28, 1).astype('float32') / 255
+    x_test = x_test.reshape(-1, 28, 28, 1).astype('float32') / 255
+    y_train = to_categorical(y_train, 10)
+    y_test = to_categorical(y_test, 10)
+
+    # Chuyển đổi sang tensor PyTorch với kích thước 4D (batch_size, channels, height, width)
+    x_train = torch.tensor(x_train).permute(0, 3, 1, 2)  # Chuyển từ (batch_size, 28, 28, 1) -> (batch_size, 1, 28, 28)
+    x_test = torch.tensor(x_test).permute(0, 3, 1, 2)    # (batch_size, 28, 28, 1) -> (batch_size, 1, 28, 28)
+
+    # Phân chia dữ liệu cho các client
+    train_data = torch.utils.data.random_split(
+        TensorDataset(x_train, torch.tensor(y_train)),
+        [len(x_train) // num_partitions] * num_partitions
+    )
+    val_data = torch.utils.data.random_split(
+        TensorDataset(x_test, torch.tensor(y_test)),
+        [len(x_test) // num_partitions] * num_partitions
+    )
+
+    trainloaders = [DataLoader(dataset, batch_size=batch_size, shuffle=True) for dataset in train_data]
+    valloaders = [DataLoader(dataset, batch_size=batch_size, shuffle=False) for dataset in val_data]
+
+    return trainloaders, valloaders, None 
 
 
 def load_recovered_data(file_path):
@@ -45,16 +75,13 @@ def save_match_percentages(file_path, mode, num_clients, percentages):
 def main(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
     results_file = "match.csv"
-    
-    from dashboard_api import run_dashboard_in_thread
-    run_dashboard_in_thread()
 
     cfg_dict = OmegaConf.to_container(cfg, resolve=True)
     backend_config = {
         "client_resources": {"num_cpus": 16 / cfg_dict["num_clients"], "num_gpus": 2 / cfg_dict["num_clients"]},
     }
     mode = 'normal'  # Choose mode: 'normal', 'attack'
-    encrypt = 'plain'  # Choose encryption type: 'plain', 'paillier', 'ckks'
+    encrypt = 'paillier'  # Choose encryption type: 'plain', 'paillier', 'ckks'
     
     trainloaders, valloaders, _ = prepare_dataset(
         num_partitions=cfg_dict["num_clients"], batch_size=cfg_dict["batch_size"]

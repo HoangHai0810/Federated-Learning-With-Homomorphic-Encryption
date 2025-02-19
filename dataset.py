@@ -35,9 +35,9 @@ def explode_columns(df, columns):
     return df
 
 def prepare_dataset(num_partitions, batch_size, val_ratio=0.1):
-    df = pd.read_csv('./data/processed_data.csv')
+    df = pd.read_csv('./data/final_processed.csv')
 
-    df = df.drop(columns=['APK Filename', 'index'])
+    df = df.drop(columns=['index'])
     df = explode_columns(df, ['Permissions', 'Activities', 'Services', 'Receivers'])
 
     X = df.drop(columns=['Label'])

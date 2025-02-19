@@ -1,0 +1,134 @@
+/* Reset default margin and padding */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Sử dụng font từ Google Fonts, ví dụ: Roboto (bạn cần import từ index.html hoặc qua CSS import) */
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Container tổng của dashboard */
+.dashboard-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f0f2f5;
+}
+
+/* Header với gradient nền */
+.dashboard-header {
+  background: linear-gradient(90deg, #1a73e8, #4285f4);
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Container nội dung chính sử dụng flex */
+.dashboard-content {
+  display: flex;
+  flex: 1;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Panel bên trái: hiển thị metrics và logs */
+.left-panel {
+  width: 30%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Container cho các metric cards */
+.metrics-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
+/* Các metric card */
+.metric-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  padding: 15px;
+  flex: 1 1 calc(50% - 15px);
+  text-align: center;
+  transition: transform 0.2s ease-in-out;
+}
+
+.metric-card:hover {
+  transform: translateY(-3px);
+}
+
+.metric-card h2 {
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.metric-card p {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #444;
+}
+
+/* Phần logs */
+.logs-section {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  flex: 0 0 310px; 
+  padding: 15px;
+  overflow: hidden;
+}
+
+.logs-section h2 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.logs-list {
+  font-size: 0.9rem;
+  list-style: none;
+  line-height: 1.4;
+}
+
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container {
+  height: 607px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  flex: 1;
+  padding: 15px;
+}
+
+.chart-container h2 {
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .dashboard-content {
+    flex-direction: column;
+  }
+  .left-panel, .right-panel {
+    width: 100%;
+  }
+}

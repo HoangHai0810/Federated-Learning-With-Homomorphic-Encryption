@@ -23,21 +23,21 @@ from flwr.common import (
     ndarrays_to_parameters,
     parameters_to_ndarrays,
 )
+from collections import OrderedDict
 from typing import List
 from pathlib import Path
-from model import Net, get_parameters, set_parameters
+from model_mnist import Net, get_parameters, set_parameters
 from SegCKKS import *
-import random
 
 class Args:
     def __init__(self):
-        self.device = 'cpu'
+        self.device = 'cpu'  # Hoặc 'cuda' nếu dùng GPU
         self.lr = 0.01
         self.momentum = 0.9
         self.local_ep = 10
-        self.mode = 'Plain'
-        self.input_size = 405
-        self.num_classes = 5
+        self.mode = 'Paillier'  # Hoặc 'CKKS', 'Paillier' tùy theo chế độ mã hóa
+        self.input_size = 784  # MNIST: 28*28
+        self.num_classes = 10  # MNIST có 10 lớp
         self.ckks_sec_level = 256
         self.ckks_mul_depth = 1
         self.ckks_key_len = 8192
@@ -76,10 +76,9 @@ class FlowerClient(Client):
         parameters_original = ins.parameters
         ndarrays_original = parameters_to_ndarrays(parameters_original)
 
-        set_parameters(self.model, ndarrays_original)
-        
-        update_w, encryption_time = self.train()
-        
+        w_glob = OrderedDict(zip(self.model.state_dict().keys(), [torch.tensor(nd, device=self.args.device) for nd in ndarrays_original]))
+        self.update(w_glob)
+        self.train()
         ndarrays_updated = get_parameters(self.model)
 
         parameters_updated = ndarrays_to_parameters(ndarrays_updated)
@@ -89,7 +88,7 @@ class FlowerClient(Client):
             status=status,
             parameters=parameters_updated,
             num_examples=len(self.ldr_train.dataset),
-            metrics={"partition_id": self.partition_id, "encryption_time": encryption_time},
+            metrics={"partition_id": self.partition_id},
         )
 
     def train(self):
@@ -105,12 +104,15 @@ class FlowerClient(Client):
             batch_loss = []
             for batch_idx, (features, labels) in enumerate(self.ldr_train):
                 features, labels = features.to(self.args.device), labels.to(self.args.device)
-                
+                if len(features.shape) == 3:  # Với MNIST
+                    features = features.unsqueeze(1)  # (B, 28, 28) -> (B, 1, 28, 28)
+                    
                 optimizer.zero_grad()
                 log_probs = self.model(features)
                 loss = self.loss_func(log_probs, labels)
                 loss.backward()
                 optimizer.step()
+
 
                 batch_loss.append(loss.item())
                 
@@ -120,23 +122,22 @@ class FlowerClient(Client):
         w_new = self.model.state_dict()
         print("Client train time:", time.time() - start_t_train)
 
-        update_w, encryption_time = self._compute_weight_update(w_new, w_old)
+        update_w = self._compute_weight_update(w_new, w_old)
         
-        return update_w, encryption_time
+        return update_w
 
     def _compute_weight_update(self, w_new, w_old):
         update_w = {}
-        encryption_time = 0
         if self.args.mode == 'Plain':
             for k in w_new.keys():
                 update_w[k] = w_new[k] - w_old[k]
         elif self.args.mode == 'Paillier':
-            update_w, encryption_time = self._encrypt_paillier(w_new, w_old)
+            update_w = self._encrypt_paillier(w_new, w_old)
         elif self.args.mode == 'CKKS':
-            update_w, encryption_time = self._encrypt_ckks(w_new, w_old)
+            update_w = self._encrypt_ckks(w_new, w_old)
         else:
             raise NotImplementedError("Unsupported encryption mode")
-        return update_w, encryption_time
+        return update_w
 
     def _encrypt_paillier(self, w_new, w_old):
         print('Paillier encrypting...')
@@ -146,9 +147,8 @@ class FlowerClient(Client):
             update_w[k] = w_new[k] - w_old[k]
             list_w = update_w[k].view(-1).cpu().tolist()
             update_w[k] = [self.pub_key.encrypt(round(elem, 3)) for elem in list_w]
-        encryption_time = time.time() - enc_start
-        print('Encryption time:', encryption_time)
-        return update_w, encryption_time
+        print('Encryption time:', time.time() - enc_start)
+        return update_w
 
     def _encrypt_ckks(self, w_new, w_old):
         print('CKKS encrypting...')
@@ -168,9 +168,9 @@ class FlowerClient(Client):
 
             update_w[k] = [enc_block.serialize() for enc_block in encrypted_vector] \
                 if isinstance(encrypted_vector, list) else encrypted_vector.serialize()
-        encryption_time = time.time() - enc_start
-        print('Encryption time:', encryption_time)
-        return update_w, encryption_time
+
+        print('Encryption time:', (time.time() - enc_start))
+        return update_w
 
     def update(self, w_glob):
         if self.args.mode == 'Plain':
@@ -189,9 +189,7 @@ class FlowerClient(Client):
             decrypted = [self.priv_key.decrypt(elem) for elem in w_glob[k]]
             origin_shape = list(self.model.state_dict()[k].size())
             self.model.state_dict()[k] += torch.FloatTensor(decrypted).to(self.args.device).view(*origin_shape)
-        decryption_time = time.time() - dec_start
-        print('Decryption time:', decryption_time)
-        return decryption_time
+        print('Decryption time:', time.time() - dec_start)
 
     def _decrypt_ckks(self, w_glob):
         print('CKKS decrypting...')
@@ -206,12 +204,9 @@ class FlowerClient(Client):
             vlen = np.prod(origin_shape)
             dec_vec = dec_vec[:vlen]
             self.model.state_dict()[k] += torch.FloatTensor(dec_vec).to(self.args.device).view(*origin_shape)
-        decryption_time = time.time() - dec_start
-        print('Decryption time:', decryption_time)
-        return decryption_time
+        print('Decryption time:', time.time() - dec_start)
         
     def evaluate(self, ins: EvaluateIns) -> EvaluateRes:
-        decryption_time = 0
         parameters = ins.parameters
         ndarrays = parameters_to_ndarrays(parameters)
         set_parameters(self.model, ndarrays)
@@ -222,10 +217,18 @@ class FlowerClient(Client):
         with torch.no_grad():
             for features, labels in self.ldr_val:
                 features, labels = features.to(self.args.device), labels.to(self.args.device)
+                if len(features.shape) == 3:  # With MNIST
+                    features = features.unsqueeze(1)
                 outputs = self.model(features)
+
+                # If labels are one-hot encoded, convert them to indices
+                if labels.dim() > 1:  # Check if it's one-hot encoded
+                    labels = torch.argmax(labels, dim=1)
+
                 loss += self.loss_func(outputs, labels).item()
                 _, predicted = torch.max(outputs.data, 1)
                 correct += (predicted == labels).sum().item()
+
 
         accuracy = correct / total
         loss /= len(self.ldr_val)
@@ -235,7 +238,7 @@ class FlowerClient(Client):
             status=status,
             loss=loss,
             num_examples=total,
-            metrics={"accuracy": accuracy, "decryption_time": decryption_time}
+            metrics={"accuracy": accuracy}
         )
 
 def client_fn(context: fl.common.Context, trainloaders, valloaders) -> Client:

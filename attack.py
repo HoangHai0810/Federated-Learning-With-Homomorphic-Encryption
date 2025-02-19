@@ -16,7 +16,6 @@ from flwr.server import ServerApp, ServerConfig, ServerAppComponents
 from typing import List, Optional, Tuple
 from flwr.common import Parameters
 
-
 class FedAttack(FedCustom):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -67,7 +66,7 @@ class FedAttack(FedCustom):
         recovered_data_list = []
 
         for sample_idx in range(num_samples):
-            input_data = torch.randint(0, 10, (1, 405), dtype=torch.float32, requires_grad=True)
+            input_data = torch.randint(0, 1, (1, 405), dtype=torch.float32, requires_grad=True)
             target = torch.randint(0, 5, (1,), dtype=torch.long)
 
             loss_fn = nn.CrossEntropyLoss()
@@ -80,6 +79,8 @@ class FedAttack(FedCustom):
 
                 loss.backward()
                 optimizer.step()
+                if loss < 0.01:
+                    break
 
             recovered_data = input_data.detach().numpy().astype(int)
             recovered_data_list.append(recovered_data)
@@ -94,16 +95,14 @@ class FedAttack(FedCustom):
 
 
     def build_model(self):
-        """Xây dựng mô hình với 405 đặc trưng đầu vào và 5 nhãn đầu ra"""
         model = nn.Sequential(
             nn.Linear(405, 128),
             nn.ReLU(),
-            nn.Linear(128, 5)
+            nn.Linear(128, 1)
         )
         return model
 
     def save_recovered_data(self, save_path="recovered_data.pkl"):
-        """Lưu lại dữ liệu đã phục hồi theo từng client"""
         with open(save_path, "wb") as f:
             pickle.dump(self.client_data_map, f)
         print(f"Recovered data saved to {save_path}")

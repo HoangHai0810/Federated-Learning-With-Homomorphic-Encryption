@@ -19,24 +19,23 @@ DEVICE = torch.device("cpu")
 class Net(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Net, self).__init__()
-        self.input_size = input_size
+        self.input_size = input_size  # Không thực sự cần thiết cho Conv2d
         self.num_classes = num_classes
 
-        self.conv1 = nn.Conv1d(in_channels=1, out_channels=16, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1)
-        self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
-        self.fc1 = nn.Linear(32 * (self.input_size // 4), 128)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.fc1 = nn.Linear(32 * 7 * 7, 128)  # Sau 2 lần pooling: 28 -> 14 -> 7
         self.fc2 = nn.Linear(128, self.num_classes)
 
     def forward(self, x):
-        x = x.unsqueeze(1) 
         x = self.conv1(x)
         x = F.relu(x)
         x = self.pool(x)
         x = self.conv2(x)
         x = F.relu(x)
         x = self.pool(x)
-        x = x.view(x.size(0), -1) 
+        x = x.view(x.size(0), -1)  # Flatten: (B, 32, 7, 7) -> (B, 32*7*7)
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
