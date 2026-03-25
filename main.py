@@ -1,5 +1,6 @@
 import os
 os.environ["RAY_DEDUP_LOGS"] = "0"
+import json
 import pickle
 from pathlib import Path
 import flwr as fl
@@ -53,7 +54,7 @@ def main(cfg: DictConfig):
     backend_config = {
         "client_resources": {"num_cpus": 16 / cfg_dict["num_clients"], "num_gpus": 2 / cfg_dict["num_clients"]},
     }
-    mode = 'normal'  # Choose mode: 'normal', 'attack'
+    mode = 'attack'  # Choose mode: 'normal', 'attack'
     encrypt = 'plain'  # Choose encryption type: 'plain', 'paillier', 'ckks'
     
     trainloaders, valloaders, _ = prepare_dataset(
@@ -95,12 +96,15 @@ def main(cfg: DictConfig):
     results_path = "results.pkl"
     with open(results_path, "wb") as h:
         pickle.dump({"history": history}, h, protocol=pickle.HIGHEST_PROTOCOL)
-    
-    strategy = server._strategy
-    history_file = f"history_{encrypt}.json"
-    with open(history_file, "w") as f:
-        json.dump(strategy.history, f, indent=4)
-    print(f"Saved history to {history_file}")
+
+    # Safe access: attack_fn strategy may not have .history
+    if hasattr(server, '_strategy') and hasattr(server._strategy, 'history'):
+        history_file = f"history_{encrypt}.json"
+        with open(history_file, "w") as f:
+            json.dump(server._strategy.history, f, indent=4)
+        print(f"Saved history to {history_file}")
+    else:
+        print("Strategy history not available, skipping history save.")
 
 if __name__ == "__main__":
     main()

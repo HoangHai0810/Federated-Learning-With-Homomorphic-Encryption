@@ -75,7 +75,9 @@ class FedCustom(FedAvg):
             aggregated_ndarrays = parameters_to_ndarrays(aggregated_weights)
 
             self.blockchain.add_block(rnd, aggregated_ndarrays)
-            print(f"Round {rnd}: Aggregated weights added to blockchain.")
+            valid = self.blockchain.is_valid()
+            print(f"Round {rnd}: Aggregated weights added to blockchain. Chain valid: {valid}")
+            self.blockchain.save("blockchain.pkl")
         agg_time = time.time() - start_agg
         
         enc_times = [res.metrics.get("encryption_time", 0) for _, res in results if res.metrics.get("encryption_time") is not None]
@@ -89,7 +91,9 @@ class FedCustom(FedAvg):
     def aggregate_evaluate(
         self, rnd: int, results: List[Tuple[ClientProxy, EvaluateRes]], failures: List[BaseException]
     ) -> Tuple[Optional[float], Dict[str, Scalar]]:
-        loss_aggregated = np.mean([res.loss for _, res in results])
+        # Weighted average loss (weighted by number of examples per client)
+        total_examples = sum(res.num_examples for _, res in results)
+        loss_aggregated = sum(res.loss * res.num_examples for _, res in results) / total_examples
         accuracy_aggregated = np.mean([res.metrics["accuracy"] for _, res in results])
         dec_times = [res.metrics.get("decryption_time", 0) for _, res in results if res.metrics.get("decryption_time") is not None]
         avg_dec_time = np.mean(dec_times) if dec_times else 0.0
@@ -112,5 +116,5 @@ class FedCustom(FedAvg):
 
 def server_fn(context: Context):
     strategy = FedCustom()
-    config = ServerConfig(num_rounds=10)
+    config = ServerConfig(num_rounds=30)  # 30 rounds as stated in paper
     return ServerAppComponents(config=config, strategy=strategy)
